@@ -29,7 +29,6 @@ export default function LoginPage() {
         const roleServeur = (user.role || '').toUpperCase();
         const roleChoisi  = credentials.role.toUpperCase();
 
-        // Vérifie que le rôle choisi correspond au vrai rôle en DB
         if (roleServeur !== roleChoisi) {
           setError(`Ce compte n'est pas un compte ${credentials.role}.`);
           setLoading(false);
@@ -42,8 +41,8 @@ export default function LoginPage() {
           router.push('/admin/dashboard');
         } else if (roleServeur === 'RH') {
           router.push('/rh/recrutement/nouvelle-offre');
-        } else if (roleServeur === 'MANAGER') {
-          router.push('/manager/dashboard');
+        } else if (roleServeur === 'EMPLOYE') {
+          router.push('/employe/dashboard');
         } else {
           setError("Accès non configuré pour ce rôle.");
         }
@@ -72,7 +71,6 @@ export default function LoginPage() {
         width: '100%', maxWidth: 420,
         boxShadow: '0 24px 64px rgba(0,0,0,0.2)'
       }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
             width: 52, height: 52, borderRadius: 14,
@@ -85,8 +83,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          {/* Sélecteur de rôle */}
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'block' }}>
               Votre rôle
@@ -95,7 +91,7 @@ export default function LoginPage() {
               {[
                 { value: 'ADMIN',   label: 'Admin',   icon: '⚙️' },
                 { value: 'RH',      label: 'RH',      icon: '👥' },
-                { value: 'MANAGER', label: 'Manager', icon: '📊' },
+                { value: 'EMPLOYE', label: 'Employé', icon: '👤' },
               ].map(r => (
                 <button key={r.value} type="button"
                   onClick={() => setCredentials({...credentials, role: r.value})}
@@ -116,7 +112,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Email */}
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'block' }}>
               Adresse Email
@@ -132,7 +127,6 @@ export default function LoginPage() {
               }} />
           </div>
 
-          {/* Mot de passe */}
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'block' }}>
               Mot de passe
@@ -148,7 +142,6 @@ export default function LoginPage() {
               }} />
           </div>
 
-          {/* Erreur */}
           {error && (
             <div style={{
               background: '#FEF2F2', color: '#991B1B',
@@ -157,7 +150,6 @@ export default function LoginPage() {
             }}>{error}</div>
           )}
 
-          {/* Bouton */}
           <button type="submit" disabled={loading} style={{
             padding: '13px', borderRadius: 10, border: 'none',
             background: loading ? '#A5B4FC' : 'linear-gradient(135deg,#6366F1,#8B5CF6)',

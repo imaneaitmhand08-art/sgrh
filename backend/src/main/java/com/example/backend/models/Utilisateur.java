@@ -26,6 +26,8 @@ public class Utilisateur {
     private LocalDate dateEmbauche = LocalDate.now();
     private boolean estActif = true;
 
+    private Integer soldeConges = 18;
+
     // Procédure de départ
     private LocalDate dateDepart;
     private String motifDepart;
@@ -68,6 +70,9 @@ public class Utilisateur {
 
     public boolean isEstActif() { return estActif; }
     public void setEstActif(boolean estActif) { this.estActif = estActif; }
+
+    public Integer getSoldeConges() { return soldeConges; }
+    public void setSoldeConges(Integer soldeConges) { this.soldeConges = soldeConges; }
 
     public LocalDate getDateDepart() { return dateDepart; }
     public void setDateDepart(LocalDate dateDepart) { this.dateDepart = dateDepart; }

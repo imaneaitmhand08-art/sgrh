@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API = 'http://localhost:8080/api';
 const COLORS = ['#4F46E5','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#DB2777'];
@@ -12,7 +13,7 @@ function Avatar({ nom, prenom, size=36 }) {
   return <div style={{ width:size, height:size, borderRadius:'50%', background:getColor((nom||'')+(prenom||'')), color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.36, fontWeight:600, flexShrink:0, fontFamily:'inherit' }}>{getInitials(nom,prenom)}</div>;
 }
 function RoleBadge({ role }) {
-  const cfg = { ADMIN:{label:'Admin',bg:'#EEF2FF',color:'#4338CA',border:'#C7D2FE'}, RH:{label:'RH',bg:'#ECFDF5',color:'#065F46',border:'#A7F3D0'}, MANAGER:{label:'Manager',bg:'#FFF7ED',color:'#9A3412',border:'#FED7AA'} };
+  const cfg = { ADMIN:{label:'Admin',bg:'#EEF2FF',color:'#4338CA',border:'#C7D2FE'}, RH:{label:'RH',bg:'#ECFDF5',color:'#065F46',border:'#A7F3D0'}, EMPLOYE:{label:'Employé',bg:'#FFF7ED',color:'#9A3412',border:'#FED7AA'} };
   const c = cfg[(role||'').toUpperCase()]||cfg['RH'];
   return <span style={{ background:c.bg, color:c.color, border:`1px solid ${c.border}`, borderRadius:20, padding:'2px 10px', fontSize:11, fontWeight:600 }}>{c.label}</span>;
 }
@@ -27,14 +28,112 @@ function CongeStatut({ statut }) {
   return <span style={{ background:c.bg, color:c.color, border:`1px solid ${c.border}`, borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:600 }}>{c.label}</span>;
 }
 
+// ═══ STATISTIQUES (TABLEAU DE BORD) ═══
+const CHART_COLORS = ['#6366F1','#10B981','#F59E0B','#DC2626','#0891B2','#7C3AED','#DB2777','#059669'];
+
+function StatistiquesDashboard({ employes, pointages }) {
+  // Répartition par département
+  const deptCounts = {};
+  employes.forEach(e => {
+    const dept = e.departement || 'Non défini';
+    deptCounts[dept] = (deptCounts[dept]||0) + 1;
+  });
+  const dataDept = Object.entries(deptCounts).map(([name, value]) => ({ name, value }));
+
+  // Évolution des pointages sur les 7 derniers jours
+  const aujourdHui = new Date();
+  const jours7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(aujourdHui);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const label = d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
+    const pointagesDuJour = pointages.filter(p => p.date === dateStr);
+    jours7.push({
+      date: label,
+      Présents: pointagesDuJour.filter(p => p.statut === 'present').length,
+      Retards: pointagesDuJour.filter(p => p.statut === 'retard').length,
+      Absents: pointagesDuJour.filter(p => p.statut === 'absent').length,
+    });
+  }
+
+  const totalPointagesSemaine = jours7.reduce((acc,j) => acc + j.Présents + j.Retards + j.Absents, 0);
+
+  return (
+    <div>
+      {/* Cartes résumé */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:24 }}>
+        {[
+          { icon:'🏢', label:'Départements actifs', value:dataDept.length, accent:'#6366F1' },
+          { icon:'📊', label:'Pointages (7 derniers jours)', value:totalPointagesSemaine, accent:'#10B981' },
+          { icon:'👥', label:'Effectif total', value:employes.length, accent:'#F59E0B' },
+        ].map(s=>(
+          <div key={s.label} style={{ background:'#fff', borderRadius:14, border:'1px solid #F1F5F9', padding:'18px 20px', display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{ width:44, height:44, borderRadius:12, background:s.accent+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{s.icon}</div>
+            <div><div style={{ fontSize:11, color:'#94A3B8', fontWeight:500 }}>{s.label}</div><div style={{ fontSize:24, fontWeight:700, color:'#1E293B' }}>{s.value}</div></div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.3fr', gap:24 }}>
+        {/* Camembert départements */}
+        <div style={{ background:'#fff', borderRadius:16, border:'1px solid #F1F5F9', padding:24 }}>
+          <div style={{ fontSize:15, fontWeight:700, color:'#1E293B', marginBottom:4 }}>🏢 Répartition par département</div>
+          <div style={{ fontSize:12, color:'#94A3B8', marginBottom:16 }}>Distribution des employés</div>
+          {dataDept.length === 0 ? (
+            <div style={{ padding:48, textAlign:'center', color:'#CBD5E1' }}>Aucune donnée</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={dataDept}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={({ name, value }) => `${name}: ${value}`}
+                >
+                  {dataDept.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Courbe pointages 7 jours */}
+        <div style={{ background:'#fff', borderRadius:16, border:'1px solid #F1F5F9', padding:24 }}>
+          <div style={{ fontSize:15, fontWeight:700, color:'#1E293B', marginBottom:4 }}>📈 Pointages sur 7 jours</div>
+          <div style={{ fontSize:12, color:'#94A3B8', marginBottom:16 }}>Présents, retards et absences par jour</div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={jours7}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+              <XAxis dataKey="date" tick={{ fontSize:12, fill:'#94A3B8' }} />
+              <YAxis allowDecimals={false} tick={{ fontSize:12, fill:'#94A3B8' }} />
+              <Tooltip />
+              <Legend wrapperStyle={{ fontSize:12 }} />
+              <Line type="monotone" dataKey="Présents" stroke="#10B981" strokeWidth={2} dot={{ r:3 }} />
+              <Line type="monotone" dataKey="Retards" stroke="#F59E0B" strokeWidth={2} dot={{ r:3 }} />
+              <Line type="monotone" dataKey="Absents" stroke="#DC2626" strokeWidth={2} dot={{ r:3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══ ORGANIGRAMME ═══
 function OrganigrammeNode({ user, children, level=0 }) {
   const [expanded, setExpanded] = useState(true);
   const roleColors = {
-    ADMIN:   { bg:'linear-gradient(135deg,#6366F1,#8B5CF6)', border:'#6366F1' },
-    MANAGER: { bg:'linear-gradient(135deg,#F59E0B,#D97706)', border:'#F59E0B' },
-    RH:      { bg:'linear-gradient(135deg,#10B981,#059669)', border:'#10B981' },
-  };
+  ADMIN:   { bg:'linear-gradient(135deg,#6366F1,#8B5CF6)', border:'#6366F1' },
+  EMPLOYE: { bg:'linear-gradient(135deg,#F59E0B,#D97706)', border:'#F59E0B' },
+  RH:      { bg:'linear-gradient(135deg,#10B981,#059669)', border:'#10B981' },
+};
   const rc = roleColors[(user.role||'').toUpperCase()] || roleColors['RH'];
 
   return (
@@ -123,7 +222,7 @@ function Organigramme({ employes }) {
         {[
           { icon:'👥', label:'Total employés', value:employes.length, color:'#6366F1', bg:'#EEF2FF' },
           { icon:'⚙️', label:'Administrateurs', value:admins.length, color:'#4338CA', bg:'#EEF2FF' },
-          { icon:'📊', label:'Managers', value:employes.filter(e=>(e.role||'').toUpperCase()==='MANAGER').length, color:'#9A3412', bg:'#FFF7ED' },
+          { icon:'📊', label:'Employés', value:employes.filter(e=>(e.role||'').toUpperCase()==='EMPLOYE').length, color:'#9A3412', bg:'#FFF7ED' },
           { icon:'🏢', label:'Départements', value:nbDepts, color:'#065F46', bg:'#ECFDF5' },
         ].map(s => (
           <div key={s.label} style={{ background:'#fff', borderRadius:14, border:'1px solid #F1F5F9', padding:'16px 20px', display:'flex', alignItems:'center', gap:12 }}>
@@ -138,7 +237,7 @@ function Organigramme({ employes }) {
         <span style={{ fontSize:12, fontWeight:600, color:'#64748B', marginRight:4 }}>Légende :</span>
         {[
           { color:'#6366F1', label:'Administrateur' },
-          { color:'#F59E0B', label:'Manager' },
+          { color:'#F59E0B', label:'Employé' },
           { color:'#10B981', label:'RH' },
         ].map(l => (
           <div key={l.label} style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -512,7 +611,7 @@ function CalendrierGlobal({ tousConges, employes }) {
 }
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('employes');
+  const [activeTab, setActiveTab] = useState('statistiques');
   const [employes, setEmployes] = useState([]);
   const [demandes, setDemandes] = useState([]);
   const [pointages, setPointages] = useState([]);
@@ -565,6 +664,7 @@ export default function AdminDashboard() {
   const nbAbsents=pointages.filter(p=>p.statut==='absent').length;
 
   const navItems = [
+    { key:'statistiques',icon:'📈', label:'Statistiques',      badge:null },
     { key:'employes',    icon:'👥', label:'Employés',          badge:null },
     { key:'pointages',   icon:'⏱️', label:'Pointages',         badge:null },
     { key:'conges',      icon:'📅', label:'Congés',            badge:demandes.length||null },
@@ -584,14 +684,14 @@ export default function AdminDashboard() {
         </div>
         <nav style={{flex:1,padding:'16px 10px',overflowY:'auto'}}>
           <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.1em',padding:'0 10px',marginBottom:6}}>PRINCIPAL</div>
-          {navItems.slice(0,4).map(item=>(
+          {navItems.slice(0,5).map(item=>(
             <button key={item.key} onClick={()=>setActiveTab(item.key)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',borderRadius:10,border:'none',cursor:'pointer',textAlign:'left',marginBottom:2,background:activeTab===item.key?'rgba(99,102,241,0.15)':'transparent',color:activeTab===item.key?'#818CF8':'#94A3B8',fontWeight:activeTab===item.key?600:400,fontSize:13,fontFamily:'inherit'}}>
               <span style={{fontSize:16}}>{item.icon}</span>{item.label}
               {item.badge?<span style={{marginLeft:'auto',background:'#EF4444',color:'#fff',borderRadius:20,padding:'1px 7px',fontSize:10,fontWeight:700}}>{item.badge}</span>:null}
             </button>
           ))}
           <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.1em',padding:'12px 10px 6px',marginTop:8}}>SYSTÈME</div>
-          {navItems.slice(4).map(item=>(
+          {navItems.slice(5).map(item=>(
             <button key={item.key} onClick={()=>setActiveTab(item.key)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',borderRadius:10,border:'none',cursor:'pointer',textAlign:'left',marginBottom:2,background:activeTab===item.key?'rgba(99,102,241,0.15)':'transparent',color:activeTab===item.key?'#818CF8':'#94A3B8',fontWeight:activeTab===item.key?600:400,fontSize:13,fontFamily:'inherit'}}>
               <span style={{fontSize:16}}>{item.icon}</span>{item.label}
             </button>
@@ -609,6 +709,7 @@ export default function AdminDashboard() {
         <header style={{background:'#fff',borderBottom:'1px solid #F1F5F9',padding:'0 32px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:50}}>
           <div>
             <div style={{fontSize:18,fontWeight:700,color:'#1E293B'}}>
+              {activeTab==='statistiques'&& 'Tableau de bord'}
               {activeTab==='employes'    && 'Gestion des employés'}
               {activeTab==='pointages'   && 'Tous les pointages'}
               {activeTab==='conges'      && 'Demandes de congés'}
@@ -617,6 +718,7 @@ export default function AdminDashboard() {
               {activeTab==='config'      && 'Configuration du système'}
             </div>
             <div style={{fontSize:12,color:'#94A3B8'}}>
+              {activeTab==='statistiques'&&'Vue d\'ensemble de l\'activité RH'}
               {activeTab==='employes'   &&`${employes.length} membres`}
               {activeTab==='pointages'  &&`${pointages.length} pointage(s) · ${nbRetards} retard(s)`}
               {activeTab==='conges'     &&`${demandes.length} en attente`}
@@ -629,6 +731,9 @@ export default function AdminDashboard() {
         </header>
 
         <main style={{flex:1,padding:32}}>
+
+          {/* STATISTIQUES */}
+          {activeTab==='statistiques'&&<StatistiquesDashboard employes={employes} pointages={pointages}/>}
 
           {/* EMPLOYÉS */}
           {activeTab==='employes'&&(
@@ -760,7 +865,7 @@ export default function AdminDashboard() {
                 <div><label style={lStyle}>Prénom</label><input style={iStyle} placeholder="Prénom" value={formData.prenom} onChange={e=>setFormData({...formData,prenom:e.target.value})}/></div>
               </div>
               <div><label style={lStyle}>Email *</label><input style={iStyle} type="email" placeholder="email@sgrh.com" value={formData.email} onChange={e=>setFormData({...formData,email:e.target.value})}/></div>
-              <div><label style={lStyle}>Rôle</label><select style={iStyle} value={formData.role} onChange={e=>setFormData({...formData,role:e.target.value})}><option value="RH">RH</option><option value="MANAGER">Manager</option><option value="ADMIN">Administrateur</option></select></div>
+              <div><label style={lStyle}>Rôle</label><select style={iStyle} value={formData.role} onChange={e=>setFormData({...formData,role:e.target.value})}><option value="RH">RH</option><option value="EMPLOYE">Employé</option><option value="ADMIN">Administrateur</option></select></div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div><label style={lStyle}>Département</label><input style={iStyle} placeholder="ex: RH, IT..." value={formData.departement} onChange={e=>setFormData({...formData,departement:e.target.value})}/></div>
                 <div><label style={lStyle}>Équipe</label><input style={iStyle} placeholder="ex: Equipe A..." value={formData.equipe} onChange={e=>setFormData({...formData,equipe:e.target.value})}/></div>

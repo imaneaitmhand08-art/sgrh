@@ -21,15 +21,15 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
         String email = loginData.get("email");
         String password = loginData.get("password");
-        String roleStr = loginData.get("role").toLowerCase(); // On convertit pour matcher l'enum
+        String roleStr = loginData.get("role").toUpperCase();
 
         Optional<Utilisateur> user = utilisateurRepository.findByEmail(email);
 
-        if (user.isPresent() && 
-            user.get().getMotDePasseHash().equals(password) && 
+        if (user.isPresent() &&
+            user.get().getMotDePasseHash().equals(password) &&
             user.get().getRole().toString().equals(roleStr)) {
-            
-            return ResponseEntity.ok(user.get()); // Connexion réussie
+
+            return ResponseEntity.ok(user.get());
         }
 
         return ResponseEntity.status(401).body("Identifiants ou rôle incorrects");
