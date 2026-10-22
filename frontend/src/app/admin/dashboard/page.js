@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API = 'http://localhost:8080/api';
@@ -611,6 +612,7 @@ function CalendrierGlobal({ tousConges, employes }) {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('statistiques');
   const [employes, setEmployes] = useState([]);
   const [demandes, setDemandes] = useState([]);
@@ -623,6 +625,8 @@ export default function AdminDashboard() {
   const [filtreDate, setFiltreDate] = useState('');
   const [filtreStatut, setFiltreStatut] = useState('');
   const [formData, setFormData] = useState({ nom:'', prenom:'', email:'', role:'RH', departement:'', poste:'', equipe:'' });
+
+  const deconnexion = () => { localStorage.removeItem('user'); router.push('/login'); };
 
   useEffect(() => { refreshData(); }, []);
   const refreshData = () => { fetchEmployes(); fetchDemandes(); fetchPointages(); };
@@ -698,10 +702,15 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div style={{padding:'16px 10px',borderTop:'1px solid #1E293B'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,background:'#1E293B'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,background:'#1E293B',marginBottom:8}}>
             <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#6366F1,#8B5CF6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff'}}>AS</div>
             <div><div style={{color:'#F1F5F9',fontSize:12,fontWeight:600}}>Admin Système</div><div style={{color:'#64748B',fontSize:10}}>Administrateur</div></div>
           </div>
+          <button onClick={deconnexion} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'10px 12px', borderRadius:10, border:'1px solid #1E293B', background:'transparent', color:'#94A3B8', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}
+            onMouseEnter={e=>{e.currentTarget.style.background='#7F1D1D';e.currentTarget.style.color='#FCA5A5';e.currentTarget.style.borderColor='#7F1D1D';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='#94A3B8';e.currentTarget.style.borderColor='#1E293B';}}>
+            🚪 Déconnexion
+          </button>
         </div>
       </aside>
 

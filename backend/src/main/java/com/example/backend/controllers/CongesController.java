@@ -42,7 +42,7 @@ public class CongesController {
 
     @GetMapping("/mon-suivi/{id}")
     public List<Conge> getMesConges(@PathVariable Long id) {
-        return congeRepository.findByEmployeId(id);
+        return congeRepository.findByEmploye_Id(id);
     }
 
     @GetMapping("/en-attente")
@@ -59,7 +59,7 @@ public class CongesController {
             int joursAlloues = emp.getSoldeConges() != null ? emp.getSoldeConges() : 18;
             int anneeActuelle = LocalDate.now().getYear();
 
-            List<Conge> congesApprouves = congeRepository.findByEmployeId(employeId).stream()
+            List<Conge> congesApprouves = congeRepository.findByEmploye_Id(employeId).stream()
                 .filter(c -> "APPROUVE".equals(c.getStatut()))
                 .filter(c -> c.getDateDebut() != null && c.getDateDebut().getYear() == anneeActuelle)
                 .toList();
@@ -146,7 +146,7 @@ public class CongesController {
 
     private void creerNotificationDecision(Conge conge) {
         try {
-            Utilisateur emp = utilisateurRepository.findById(conge.getEmployeId()).orElse(null);
+            Utilisateur emp = conge.getEmploye();
             if (emp == null) return;
 
             Notification notif = new Notification();

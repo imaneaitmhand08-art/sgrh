@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 const API = 'http://localhost:8080/api';
 const COLORS = ['#4F46E5','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#DB2777'];
@@ -154,6 +155,7 @@ function genererPDFSanction(sanction, config) {
 }
 
 export default function EspaceRH() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('pointage');
   const [activeRecrutTab, setActiveRecrutTab] = useState('offres');
   const [mesDemandes, setMesDemandes] = useState([]);
@@ -191,6 +193,8 @@ export default function EspaceRH() {
   const [showDepartForm, setShowDepartForm] = useState(false);
   const [showSanctionForm, setShowSanctionForm] = useState(false);
   const [showContratForm, setShowContratForm] = useState(false);
+
+  const deconnexion = () => { localStorage.removeItem('user'); router.push('/login'); };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user')||'null');
@@ -317,11 +321,19 @@ export default function EspaceRH() {
             </button>
           ))}
         </nav>
+        {/* BAS DE SIDEBAR : profil + déconnexion */}
         <div style={{ padding:'16px 10px', borderTop:'1px solid #1E293B' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, background:'#1E293B' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, background:'#1E293B', marginBottom:8 }}>
             <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#10B981,#059669)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#fff' }}>{getInitials(rhInfo?.nom,rhInfo?.prenom)}</div>
             <div><div style={{ color:'#F1F5F9', fontSize:12, fontWeight:600 }}>{rhInfo?.nom} {rhInfo?.prenom}</div><div style={{ color:'#64748B', fontSize:10 }}>Responsable RH</div></div>
           </div>
+          <button
+            onClick={deconnexion}
+            style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'10px 12px', borderRadius:10, border:'1px solid #1E293B', background:'transparent', color:'#94A3B8', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}
+            onMouseEnter={e=>{e.currentTarget.style.background='#7F1D1D';e.currentTarget.style.color='#FCA5A5';e.currentTarget.style.borderColor='#7F1D1D';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='#94A3B8';e.currentTarget.style.borderColor='#1E293B';}}>
+            🚪 Déconnexion
+          </button>
         </div>
       </aside>
 
@@ -599,7 +611,6 @@ export default function EspaceRH() {
           {/* CONTRATS */}
           {activeTab==='contrats'&&(
             <div>
-              {/* Alertes */}
               {alertesContrats.length>0&&(
                 <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:14, padding:'16px 20px', marginBottom:20 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:'#92400E', marginBottom:10 }}>⚠️ {alertesContrats.length} contrat(s) expirant dans moins de 30 jours</div>

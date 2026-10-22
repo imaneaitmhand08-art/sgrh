@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 
 const API = 'http://localhost:8080/api';
@@ -174,6 +175,7 @@ function genererPdfContrat(contrat, employe) {
 }
 
 export default function EmployeDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('pointage');
   const [employeInfo, setEmployeInfo] = useState(null);
   const [employeId, setEmployeId] = useState(null);
@@ -192,6 +194,8 @@ export default function EmployeDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [notifNonLues, setNotifNonLues] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  const deconnexion = () => { localStorage.removeItem('user'); router.push('/login'); };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user')||'null');
@@ -284,10 +288,15 @@ export default function EmployeDashboard() {
           ))}
         </nav>
         <div style={{ padding:'16px 10px', borderTop:'1px solid #1E293B' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, background:'#1E293B' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, background:'#1E293B', marginBottom:8 }}>
             <Avatar nom={employeInfo?.nom} prenom={employeInfo?.prenom} size={32}/>
             <div><div style={{ color:'#F1F5F9', fontSize:12, fontWeight:600 }}>{employeInfo?.nom} {employeInfo?.prenom}</div><div style={{ color:'#64748B', fontSize:10 }}>{employeInfo?.poste||'Employé'}</div></div>
           </div>
+          <button onClick={deconnexion} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'10px 12px', borderRadius:10, border:'1px solid #1E293B', background:'transparent', color:'#94A3B8', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}
+            onMouseEnter={e=>{e.currentTarget.style.background='#7F1D1D';e.currentTarget.style.color='#FCA5A5';e.currentTarget.style.borderColor='#7F1D1D';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='#94A3B8';e.currentTarget.style.borderColor='#1E293B';}}>
+            🚪 Déconnexion
+          </button>
         </div>
       </aside>
 
